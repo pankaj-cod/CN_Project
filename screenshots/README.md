@@ -33,3 +33,9 @@ This directory contains visual verification evidence for Project 2 evaluation.
      - Backend A process stopped on Mac 3
      - Request sent to Nginx reverse proxy
      - Successful response returned from `X-Backend: B` without error
+
+6. **`backend-b-running.png`**:
+   - Evidence: Terminal output showing Backend B server initialized and listening on port 3002 (Mac 4 / Prakhar).
+
+7. **`nginx-config-test.png`**:
+   - Evidence: Terminal output showing Nginx syntax test (`nginx -t`) passing successfully and service reload (`nginx -s reload`) on Mac 2 (Om).
