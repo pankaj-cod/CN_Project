@@ -3,7 +3,7 @@
 **Team:** Harshit Kudhial (2401010182) · Om Chimurkar (2401010306) ·
 Pankaj Upadhyay (2401010317) · Prakhar Rawat (2401020045)
 
-**Domain:** `app.teamX.test` / `api.teamX.test`  ·  **Review date:** _____
+**Domain:** `app.teamX.test` / `api.teamX.test`  ·  
 
 > Sections marked **TODO** must be filled in with what you actually observed
 > on your Macs during the Phase 2 run. Keep the raw output in
