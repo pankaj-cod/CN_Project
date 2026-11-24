@@ -6,3 +6,7 @@ node_modules/
 *.crt
 .DS_Store
 *.log
+
+# Phase 2: real IPs and generated configs
+team.env
+build/

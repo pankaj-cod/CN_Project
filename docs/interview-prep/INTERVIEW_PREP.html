@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Phase 2 Interview Prep - teamX</title>
+<style>
+  @page { size: A4; margin: 16mm 14mm 16mm 14mm; }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Helvetica Neue", Arial, sans-serif; font-size: 10.5pt; line-height: 1.45; color: #1d1d1f; margin: 0; }
+  h1 { font-size: 22pt; margin: 0 0 4px; }
+  h2 { font-size: 15pt; margin: 22px 0 8px; padding-bottom: 4px; border-bottom: 2px solid #1d1d1f; }
+  h3 { font-size: 12pt; margin: 16px 0 6px; }
+  h4 { font-size: 10.5pt; margin: 12px 0 4px; text-transform: uppercase; letter-spacing: .04em; color: #555; }
+  p { margin: 4px 0 8px; }
+  ul, ol { margin: 4px 0 8px; padding-left: 20px; }
+  li { margin: 2px 0; }
+  code { font-family: Menlo, Consolas, monospace; font-size: 9pt; background: #f2f2f4; padding: 1px 4px; border-radius: 3px; }
+  pre { font-family: Menlo, Consolas, monospace; font-size: 8.8pt; background: #f5f5f7; border: 1px solid #e3e3e8; border-radius: 6px; padding: 8px 10px; margin: 6px 0 10px; white-space: pre-wrap; page-break-inside: avoid; }
+  table { width: 100%; border-collapse: collapse; margin: 6px 0 12px; font-size: 9.6pt; page-break-inside: auto; }
+  tr { page-break-inside: avoid; }
+  th, td { border: 1px solid #d8d8de; padding: 5px 7px; text-align: left; vertical-align: top; }
+  th { background: #f0f0f3; }
+  .page { page-break-before: always; }
+  .cover { text-align: left; padding-top: 30px; }
+  .sub { color: #555; font-size: 11pt; }
+  .box { border: 1px solid #d8d8de; border-left: 5px solid #1d1d1f; border-radius: 6px; padding: 8px 12px; margin: 8px 0 12px; background: #fafafa; page-break-inside: avoid; }
+  .say { border-left-color: #2e7d32; background: #f3faf3; }
+  .warn { border-left-color: #c62828; background: #fdf3f3; }
+  .m1 { border-left-color: #1565c0; } .m2 { border-left-color: #2e7d32; }
+  .m3 { border-left-color: #f9a825; } .m4 { border-left-color: #c62828; }
+  .tag { display: inline-block; font-size: 8.5pt; font-weight: 600; padding: 1px 7px; border-radius: 10px; color: #fff; margin-right: 4px; }
+  .t1 { background: #1565c0; } .t2 { background: #2e7d32; } .t3 { background: #b88a00; } .t4 { background: #c62828; }
+  .qa td:first-child { width: 36%; font-weight: 600; }
+  .small { font-size: 9pt; color: #555; }
+</style>
+</head>
+<body>
+
+<!-- ============================================================ COVER -->
+<div class="cover">
+  <h1>Private Network Service Platform: Phase 2</h1>
+  <p class="sub">Interview &amp; demo preparation · team <b>teamX</b> · domain <code>app.teamX.test</code></p>
+
+  <h2>How to use this document</h2>
+  <ol>
+    <li><b>Everyone</b> reads Part 1 (the big picture, 10 minutes). Every member must be able to explain the whole request flow.</li>
+    <li><b>Each member</b> studies <b>their own section</b> in Part 2: the concepts, what they show, the commands, and the likely questions.</li>
+    <li><b>Everyone</b> reads Part 3 (common questions) and Part 4 (demo script + emergency fixes).</li>
+  </ol>
+
+  <h2>Who does what</h2>
+  <table>
+    <tr><th>Member</th><th>Mac / IP</th><th>Runs on their Mac</th><th>Explains in the interview</th></tr>
+    <tr><td><span class="tag t1">Member 1</span></td><td>Mac 1<br><code>10.7.23.0</code></td><td>Primary DNS (dnsmasq) + <b>main client</b> (types most demo commands)</td><td>DNS, Ext A (backup DNS), Ext B (TTL)</td></tr>
+    <tr><td><span class="tag t2">Member 2</span></td><td>Mac 2<br><code>10.7.3.24</code></td><td>Edge: nginx (HTTPS, load balancer)</td><td>nginx, TLS, load balancing, Ext D (failover), single point of failure</td></tr>
+    <tr><td><span class="tag t3">Member 3</span></td><td>Mac 3<br><code>10.7.0.215</code></td><td>Backend A (:3001) + backup DNS + firewall</td><td>Backends, Ext C (firewall isolation)</td></tr>
+    <tr><td><span class="tag t4">Member 4</span></td><td>Mac 4<br><code>10.7.3.165</code></td><td>Backend B (:3002) + standby nginx + firewall</td><td>Ext E (edge cutover), Ext F (troubleshooting method)</td></tr>
+  </table>
+
+  <div class="box say"><b>Golden rules in front of the examiner</b>
+    <ol>
+      <li><b>Say what you are about to do</b> before typing: "Now I stop Backend A to show failover."</li>
+      <li><b>Point at the result</b>: "All responses now come from B, zero failed."</li>
+      <li><b>If something breaks, stay calm</b>: "Let's troubleshoot layer by layer", run <code>./scripts/diagnose.sh</code> and read the verdict. That <i>is</i> Extension F.</li>
+      <li><b>If you don't know an answer</b>, explain how you'd find out: "I'd check DNS with dig, then the port with nc…"</li>
+      <li><b>After any restart</b> of nginx, node or dnsmasq, look at that Mac's screen and click <b>Allow</b> on the firewall popup.</li>
+    </ol>
+  </div>
+</div>
+
+<!-- ============================================================ PART 1 -->
+<div class="page">
+<h2>Part 1: The big picture (everyone)</h2>
+
+<h3>The 30-second opening (memorise)</h3>
+<div class="box say">
+"We built a small private cloud on 4 Macs. A user types <b>app.teamX.test</b>. <b>Mac 1</b> is our DNS server and turns that name into an IP address. The client then connects over <b>HTTPS</b> to <b>Mac 2</b>, which runs <b>nginx</b>. nginx decrypts the request and forwards it to one of two backend servers, <b>Mac 3</b> (Backend A) or <b>Mac 4</b> (Backend B), taking turns. That is load balancing.<br><br>
+Phase 1 built this. In Phase 2 we made it <b>resilient</b>: a backup DNS, automatic failover between backends, a firewall so nobody can bypass nginx, a standby nginx we can switch to with DNS, and a step-by-step method to find faults."
+</div>
+
+<h3>The diagram (draw this on the board)</h3>
+<pre>
+  Client (Mac 1)
+      |  1. DNS query: "what is app.teamX.test?"   (UDP port 53)
+      v
+  DNS  Mac 1 10.7.23.0 (primary)  ----same records----  Mac 3 10.7.0.215 (backup)
+      |  answer: 10.7.3.24, TTL 30 s
+      v
+  2. HTTPS to 10.7.3.24 port 443  (TCP handshake, then TLS handshake, then encrypted HTTP)
+      v
+  Mac 2  nginx EDGE  10.7.3.24          [Mac 4 10.7.3.165 runs a STANDBY nginx]
+      |  TLS ends here. Load balancer: round robin + retry on failure
+      |  3. plain HTTP inside the private network
+      +--------> Mac 3  Backend A  :3001
+      +--------> Mac 4  Backend B  :3002
+                 pf firewall on Mac 3/4: ONLY the edge may connect to 3001/3002
+</pre>
+
+<h3>One request, step by step (layers)</h3>
+<table>
+  <tr><th>#</th><th>What happens</th><th>Layer / protocol</th><th>Port</th></tr>
+  <tr><td>1</td><td>Client asks DNS for <code>app.teamX.test</code>, gets <code>10.7.3.24</code> (cached for 30 s)</td><td>Application, DNS over UDP</td><td>53</td></tr>
+  <tr><td>2</td><td>Packets travel over Wi-Fi between IP addresses</td><td>Network (IP), Link (Wi-Fi)</td><td>-</td></tr>
+  <tr><td>3</td><td>TCP 3-way handshake with Mac 2: SYN, SYN-ACK, ACK</td><td>Transport (TCP)</td><td>443</td></tr>
+  <tr><td>4</td><td>TLS handshake: nginx sends the certificate for app.teamX.test; client checks that it is trusted and the name matches</td><td>Presentation / security (TLS)</td><td>443</td></tr>
+  <tr><td>5</td><td>Encrypted HTTP request: <code>GET /api/status</code></td><td>Application (HTTP)</td><td>443</td></tr>
+  <tr><td>6</td><td>nginx picks a backend (A, B, A, B…) and forwards in plain HTTP</td><td>Reverse proxy / load balancer</td><td>3001 / 3002</td></tr>
+  <tr><td>7</td><td>Backend answers JSON with header <code>X-Backend: A</code> or <code>B</code>; nginx adds <code>X-Edge</code></td><td>Application</td><td>-</td></tr>
+</table>
+
+<h3>Phase 1 vs Phase 2</h3>
+<table>
+  <tr><th>Area</th><th>Phase 1: build it</th><th>Phase 2: make it resilient</th></tr>
+  <tr><td>DNS</td><td>One server on Mac 1. Records had TTL 0 (never cached).</td><td><b>Ext A</b>: backup DNS on Mac 3. <b>Ext B</b>: TTL 30 s; we change a record live and show the cache delay.</td></tr>
+  <tr><td>Backends</td><td>nginx alternated A and B.</td><td><b>Ext D</b>: stop A and nothing fails; nginx retries on B.</td></tr>
+  <tr><td>Security</td><td>Anyone could reach 3001/3002 directly.</td><td><b>Ext C</b>: pf firewall, only Mac 2 allowed, with rollback.</td></tr>
+  <tr><td>Edge</td><td>One nginx; if it dies, everything dies.</td><td><b>Ext E</b>: standby nginx on Mac 4, switched with one DNS change.</td></tr>
+  <tr><td>Faults</td><td>We showed failures.</td><td><b>Ext F</b>: a fault is injected and we find it layer by layer.</td></tr>
+</table>
+
+<h3>Files you may be asked about</h3>
+<table>
+  <tr><th>File</th><th>What it is</th></tr>
+  <tr><td><code>team.env</code></td><td>The 4 IPs + team name. Every script reads it. Same file on all Macs.</td></tr>
+  <tr><td><code>scripts/render.sh</code></td><td>Builds the real config files (DNS, nginx, firewall) from templates + team.env into <code>build/</code>.</td></tr>
+  <tr><td><code>dns/dnsmasq.conf.template</code></td><td>DNS config: records with TTL 30, query logging, forwarding of other names.</td></tr>
+  <tr><td><code>nginx/nginx-phase2.conf.template</code></td><td>Edge config: HTTPS, upstream A+B, failover settings, X-Edge / X-Upstream headers.</td></tr>
+  <tr><td><code>firewall/pf-backend.rules.template</code></td><td>Firewall rules: only the edge may reach 3001/3002.</td></tr>
+  <tr><td><code>scripts/diagnose.sh</code></td><td>Checks every layer in order and prints the first broken one (Ext F).</td></tr>
+  <tr><td><code>scripts/watch.sh</code>, <code>lb-test.sh</code>, <code>backend-ports.sh</code></td><td>Live view, load-balancing test, direct backend port test.</td></tr>
+</table>
+</div>
+
+<!-- ============================================================ MEMBER 1 -->
+<div class="page">
+<h2><span class="tag t1">Member 1</span> Mac 1: DNS, Ext A, Ext B (+ main client)</h2>
+
+<h3>Concepts you must explain</h3>
+<div class="box m1">
+<ul>
+  <li><b>DNS</b> = the phonebook of the network: turns a <i>name</i> into an <i>IP</i>. Uses <b>port 53</b>, normally <b>UDP</b>.</li>
+  <li><b>dnsmasq</b> = the small DNS server program we run. It answers our team names itself and forwards other names (google.com) to the normal network DNS.</li>
+  <li><b>.test</b> is a reserved top-level domain that never exists on the internet, so no conflicts.</li>
+  <li><b>A record</b> = name → IPv4 address. Ours: <code>app.teamX.test → 10.7.3.24</code>.</li>
+  <li><b>TTL (Time To Live)</b> = how many seconds a client may <i>cache</i> (remember) an answer. Ours = <b>30 s</b>.</li>
+  <li><b>Resolver / cache</b>: macOS remembers answers (mDNSResponder). <code>dig @server</code> asks the server directly (no cache); curl/browsers use the cached OS answer.</li>
+  <li><b>Flush</b> = clear the OS cache now: <code>dscacheutil -flushcache</code> + <code>killall -HUP mDNSResponder</code>.</li>
+</ul>
+</div>
+
+<h3>Ext A: Backup DNS</h3>
+<p><b>What:</b> a second dnsmasq on Mac 3 with exactly the same records (made from the same template). Clients list both servers: Mac 1 first, Mac 3 second.</p>
+<p><b>Why:</b> if DNS dies, nobody can find the site, even though the site itself is fine.</p>
+<p><b>Demo:</b> stop Mac 1's DNS; the live view shows <code>dns1 down</code> but requests stay 200 (the client falls back to Mac 3). The first lookup after the failure is slower (timeout, then retry on the backup).</p>
+<div class="box say"><b>Say:</b> "A DNS failure means you can't <i>find</i> the server. An application failure means you find it and connect, but the service behind it is broken (502). Different layers, different symptoms."</div>
+
+<h3>Ext B: TTL and a controlled record change</h3>
+<p><b>Phase 1 problem:</b> we used <code>address=</code> records, which dnsmasq answers with TTL 0, so nothing was cached. Now we use <code>host-record=name,IP,30</code>.</p>
+<p><b>Demo:</b> change <code>app</code> to Mac 4's IP on <b>both</b> DNS servers. The DNS columns in the live view change <i>immediately</i>, but the <code>CONNECTED</code> column keeps the old IP for up to 30 s, then switches. Then change back and <b>flush</b>: it switches at once.</p>
+<div class="box say"><b>Say:</b> "Short TTL: changes spread fast, but more DNS queries. Long TTL: fewer queries, but changes are slow. Before a migration, companies lower the TTL a day early. A flush only fixes <i>my</i> Mac; you cannot flush other people's caches. That is why TTL planning matters."</div>
+
+<h3>Your commands (Mac 1, folder <code>~/Desktop/CN/CN_Project</code>)</h3>
+<table>
+  <tr><th>Command</th><th>What it does</th></tr>
+  <tr><td><code>source scripts/demo-env.sh</code></td><td>Loads team.env and labels the prompt (do in every new window)</td></tr>
+  <tr><td><code>./dns/dns.sh show</code></td><td>What this DNS server answers right now, with TTL</td></tr>
+  <tr><td><code>./dns/dns.sh stop</code> / <code>start</code></td><td>Stop / start dnsmasq (Ext A)</td></tr>
+  <tr><td><code>./dns/dns.sh set app $STANDBY_EDGE_IP</code></td><td>Point app at Mac 4 (Ext B/E). Run on Mac 1 <b>and</b> Mac 3!</td></tr>
+  <tr><td><code>./dns/dns.sh set app $EDGE_IP</code></td><td>Point app back at Mac 2</td></tr>
+  <tr><td><code>./dns/dns.sh log</code></td><td>Live log of every DNS query (evidence)</td></tr>
+  <tr><td><code>dig @10.7.23.0 app.teamX.test +noall +answer</code></td><td>Ask Mac 1 directly; 2nd column = TTL</td></tr>
+  <tr><td><code>dig @10.7.0.215 app.teamX.test +noall +answer</code></td><td>Ask the backup directly</td></tr>
+  <tr><td><code>./scripts/client-dns.sh show</code></td><td>Which DNS servers this Mac uses</td></tr>
+  <tr><td><code>./scripts/client-dns.sh flush</code></td><td>Clear the macOS DNS cache</td></tr>
+  <tr><td><code>./scripts/watch.sh</code></td><td>Live view, 1 line per second: DNS answers, connected IP, edge, backend</td></tr>
+  <tr><td><code>./scripts/lb-test.sh 6</code></td><td>6 requests; shows which backend answered each</td></tr>
+  <tr><td><code>./scripts/diagnose.sh</code></td><td>Layer-by-layer health check with verdict</td></tr>
+</table>
+
+<h3>Likely questions for you</h3>
+<table class="qa">
+  <tr><td>What happens if both DNS servers are down?</td><td>Names can't be resolved: curl says "Could not resolve host". But <code>ping 10.7.3.24</code> still works; the network is fine, only name lookup fails.</td></tr>
+  <tr><td>How does the client know to use the backup?</td><td>We configured two DNS servers (<code>networksetup -setdnsservers</code>). If the first doesn't answer within its timeout, the OS asks the second.</td></tr>
+  <tr><td>Why must both servers have the same records?</td><td>Otherwise clients get different answers depending on which server they asked. During a change, update both.</td></tr>
+  <tr><td>Difference between <code>dig</code> and what curl uses?</td><td><code>dig @server</code> asks that server directly, no cache. curl uses the OS resolver, which caches for the TTL.</td></tr>
+  <tr><td>Why UDP for DNS?</td><td>Small, single question/answer; no handshake needed, so it's fast. TCP is used for large answers.</td></tr>
+  <tr><td>What does <code>local=/teamX.test/</code> do?</td><td>Our server is authoritative for teamX.test: unknown names get NXDOMAIN locally and are never sent to the internet.</td></tr>
+  <tr><td>How are non-team names (google.com) resolved?</td><td>dnsmasq forwards them to the network's normal DNS (<code>server=</code> lines, with <code>no-resolv</code> so the two team servers can't loop).</td></tr>
+</table>
+</div>
+
+<!-- ============================================================ MEMBER 2 -->
+<div class="page">
+<h2><span class="tag t2">Member 2</span> Mac 2: nginx edge, TLS, load balancing, Ext D</h2>
+
+<h3>Concepts you must explain</h3>
+<div class="box m2">
+<ul>
+  <li><b>Reverse proxy</b>: clients talk only to nginx; nginx talks to the backends on their behalf. Clients never see the backend IPs.</li>
+  <li><b>TLS termination</b>: nginx holds the certificate and private key, decrypts HTTPS, and forwards plain HTTP inside the private network. Client→edge is encrypted; edge→backend is plain.</li>
+  <li><b>Certificate</b>: proves the server is <code>app.teamX.test</code> (the name is in the <b>SAN</b> field) and enables encryption. Ours is <b>self-signed</b>, so every client Mac added it to its trusted keychain. We never use <code>curl -k</code> (that ignores certificate errors).</li>
+  <li><b>Load balancing</b>: <code>upstream</code> block with 2 servers, default <b>round robin</b> (A, B, A, B).</li>
+  <li><b>Port 80</b> redirects to 443 (HTTP → HTTPS).</li>
+</ul>
+</div>
+
+<h3>Ext D: High-availability failover</h3>
+<p>Our upstream config:</p>
+<pre>upstream backend_servers {
+    server 10.7.0.215:3001 max_fails=1 fail_timeout=5s;
+    server 10.7.3.165:3002 max_fails=1 fail_timeout=5s;
+}
+proxy_next_upstream       error timeout http_502 http_503 http_504;
+proxy_next_upstream_tries 2;
+proxy_connect_timeout     2s;</pre>
+<ol>
+  <li>A request goes to A; the connection fails (refused, or no answer in 2 s).</li>
+  <li>nginx <b>retries the same request on B</b>, so the user still gets 200.</li>
+  <li>A is marked unavailable for 5 s (<code>fail_timeout</code>); all traffic goes to B.</li>
+  <li>After 5 s nginx tries A again with a real request; if it answers, round robin resumes.</li>
+</ol>
+<p>This is a <b>passive health check</b> (it learns from real requests). <b>Active</b> health checks (regular test requests) exist in nginx Plus / cloud load balancers.</p>
+<div class="box say"><b>Say:</b> "When A died, the user saw no error: nginx retried on B. Our edge log shows <code>ustatus="502, 200"</code>, the failed try on A and the success on B."</div>
+
+<h3>502 vs 504 (very likely question)</h3>
+<table>
+  <tr><th>Code</th><th>Meaning</th><th>Typical cause in our setup</th></tr>
+  <tr><td><b>502</b> Bad Gateway</td><td>nginx reached the backend Mac, but the connection was refused</td><td>Mac is on, <code>node</code> is not running</td></tr>
+  <tr><td><b>504</b> Gateway Timeout</td><td>No answer at all within the timeout</td><td>Mac is off / asleep, or a firewall drops packets</td></tr>
+</table>
+<p>With <b>both</b> backends down, <code>/edge-health</code> still answers (nginx answers it itself). That proves the edge is alive and only the backends are broken.</p>
+
+<h3>Single point of failure (SPOF)</h3>
+<div class="box say"><b>Say:</b> "With a backup DNS and two backends, the remaining single point of failure is <b>this nginx on Mac 2</b>: it is the only IP the name points to. If it dies, everything dies even though both backends are healthy. Fixes: a second edge with a <b>floating virtual IP</b> (keepalived / VRRP), <b>DNS failover</b> with health checks (what Ext E does by hand), or a managed load balancer like <b>AWS ALB</b> across availability zones. Other shared dependencies: the single Wi-Fi/router."</div>
+
+<h3>Your commands (Mac 2, folder <code>~/Desktop/CN_Project</code>)</h3>
+<table>
+  <tr><th>Command</th><th>What it does</th></tr>
+  <tr><td><code>sudo nginx -t</code></td><td>Test the config syntax</td></tr>
+  <tr><td><code>sudo nginx</code></td><td>Start nginx (then click <b>Allow</b> on the popup!)</td></tr>
+  <tr><td><code>sudo nginx -s reload</code></td><td>Reload after a config change, without dropping connections</td></tr>
+  <tr><td><code>sudo pkill -9 nginx; sleep 1; sudo nginx</code></td><td>Hard restart (if "address already in use")</td></tr>
+  <tr><td><code>pgrep -l nginx</code></td><td>Is nginx running?</td></tr>
+  <tr><td><code>tail -f /opt/homebrew/var/log/nginx/cn-edge-access.log</code></td><td>Live log: which backend served each request</td></tr>
+  <tr><td><code>grep -A3 upstream /opt/homebrew/etc/nginx/nginx.conf</code></td><td>Show the upstream (backend) list</td></tr>
+  <tr><td><code>./scripts/backend-ports.sh</code></td><td>Can the edge reach the backends directly? (OPEN expected)</td></tr>
+  <tr><td><code>./scripts/diagnose.sh --edge</code></td><td>Also checks the nginx upstream IP:port against team.env</td></tr>
+</table>
+
+<h3>Likely questions for you</h3>
+<table class="qa">
+  <tr><td>Why terminate TLS at the edge?</td><td>One place holds the certificate; backends stay simple; nginx can read the HTTP request to route and add headers.</td></tr>
+  <tr><td>Is plain HTTP to the backends safe?</td><td>Acceptable inside a private network protected by the firewall. In production you could re-encrypt (mTLS) to the backends.</td></tr>
+  <tr><td>What is SAN?</td><td>Subject Alternative Name: the list of names the certificate is valid for (app.teamX.test, api.teamX.test).</td></tr>
+  <tr><td>What headers did you add?</td><td><code>X-Edge</code> (which nginx answered: primary/standby), <code>X-Upstream</code> (which backend(s) nginx tried), and backends add <code>X-Backend</code>.</td></tr>
+  <tr><td>How fast is failover?</td><td>The failing request is retried immediately; at most a ~2 s connect timeout if the Mac is off. The bad backend is skipped for 5 s.</td></tr>
+  <tr><td>What does the backend see as the client IP?</td><td>The edge's IP (10.7.3.24). The real client IP is passed in <code>X-Forwarded-For</code>.</td></tr>
+</table>
+</div>
+
+<!-- ============================================================ MEMBER 3 -->
+<div class="page">
+<h2><span class="tag t3">Member 3</span> Mac 3: Backend A, backup DNS, Ext C (firewall)</h2>
+
+<h3>Concepts you must explain</h3>
+<div class="box m3">
+<ul>
+  <li><b>Backend</b>: a small Node.js (Express) server. Backend A listens on <b>port 3001</b> on all interfaces (<code>0.0.0.0</code>), answers <code>/api/status</code> with JSON and header <code>X-Backend: A</code>.</li>
+  <li><b>Port</b>: the IP finds the <i>machine</i>, the port finds the <i>program</i> on it.</li>
+  <li><b>pf</b> = macOS's built-in packet filter (firewall), configured with <code>pfctl</code>.</li>
+  <li><b>Anchor</b>: a named sub-section of the pf rules. We put our rules in <code>com.apple/cn-project</code>, so the system file <code>/etc/pf.conf</code> is <b>never edited</b>.</li>
+  <li><b>Table</b> <code>&lt;edges&gt;</code>: the list of IPs allowed in (Mac 2, and Mac 4 in Ext E).</li>
+</ul>
+</div>
+
+<h3>Ext C: Service isolation</h3>
+<p><b>Problem:</b> before the firewall, anyone on the Wi-Fi could connect directly to <code>http://10.7.0.215:3001</code>, bypassing nginx: no HTTPS, no load balancing, backend exposed.</p>
+<p><b>Our rules</b> (<code>firewall/pf-backend.rules.template</code>):</p>
+<pre>table &lt;edges&gt; persist { 10.7.3.24 }                      # Mac 2 = the edge
+pass  in quick on lo0 all no state                        # local traffic always OK
+pass  in quick proto tcp from &lt;edges&gt; to any port { 3001 3002 } keep state
+block drop in log quick proto tcp from any to any port { 3001 3002 }</pre>
+<p>Read it top to bottom: "<i>quick</i>" means the first matching rule wins. Edge → allowed. Everyone else to 3001/3002 → silently dropped.</p>
+<p><b>Demo:</b> before: Mac 1 sees both backends <b>OPEN</b>. After <code>apply</code>: Mac 1 sees <b>BLOCKED</b> (but ping still works: the host is reachable, only the port is filtered). Mac 2 still sees <b>OPEN</b>. The website still works through nginx.</p>
+<p><b>Rollback:</b> <code>apply</code> first saves a copy of <code>/etc/pf.conf</code> and a snapshot of the live rules in <code>~/.cn-project/firewall/</code>. <code>rollback</code> flushes our anchor, releases our pf "enable token" (pf returns to exactly its old on/off state), and compares with the snapshot.</p>
+<div class="box say"><b>Say:</b> "Only the edge may talk to the backends. This is the same idea as a <b>cloud security group</b>: backends sit in a private subnet and only accept traffic from the load balancer's group. We used <b>drop</b>, not reject: drop sends nothing back, so the client just times out, which hides the service. Reject would send an immediate 'connection refused'."</div>
+
+<h3>Your commands (Mac 3, folder <code>~/Desktop/CN_Project</code>)</h3>
+<table>
+  <tr><th>Command</th><th>What it does</th></tr>
+  <tr><td><code>cd backend-a &amp;&amp; node server.js</code></td><td>Start Backend A (keep the window open; click <b>Allow</b>)</td></tr>
+  <tr><td><kbd>Ctrl+C</kbd> in that window</td><td>Stop Backend A (Ext D demo)</td></tr>
+  <tr><td><code>./firewall/firewall.sh apply</code></td><td>Save rollback copy, load rules, enable pf</td></tr>
+  <tr><td><code>./firewall/firewall.sh status</code></td><td>Show rules, the &lt;edges&gt; table, hit counters</td></tr>
+  <tr><td><code>./firewall/firewall.sh allow-standby</code></td><td>Also allow Mac 4 (standby edge, Ext E)</td></tr>
+  <tr><td><code>./firewall/firewall.sh rollback</code></td><td>Remove our rules, restore the original state (mandatory after demo)</td></tr>
+  <tr><td><code>sudo pfctl -a com.apple/cn-project -s rules</code></td><td>Raw view of our loaded rules</td></tr>
+  <tr><td><code>./dns/dns.sh show</code> / <code>restart</code></td><td>Backup DNS: what it answers / restart it</td></tr>
+  <tr><td><code>./dns/dns.sh set app &lt;IP&gt;</code></td><td>Change record on the backup too (Ext B/E, together with Mac 1)</td></tr>
+  <tr><td><code>caffeinate -dimsu</code></td><td>Keep the Mac awake during the demo</td></tr>
+</table>
+
+<h3>Likely questions for you</h3>
+<table class="qa">
+  <tr><td>Why does ping still work after the firewall?</td><td>We only block TCP ports 3001/3002. ICMP (ping) is not blocked. It proves the host is up and only the port is filtered.</td></tr>
+  <tr><td>"Timed out" vs "connection refused"?</td><td>Timed out = packets dropped (firewall, or host off). Refused = host answered with a TCP RST: reachable, but nothing listening on that port.</td></tr>
+  <tr><td>Why the lo0 rule?</td><td>So local (same-machine) traffic is never blocked by accident.</td></tr>
+  <tr><td>Why is Mac 4 added in Ext E?</td><td>The rule matches on <b>source IP</b>. The standby edge has a different IP, so it must be added to &lt;edges&gt;.</td></tr>
+  <tr><td>Is the backup DNS on the same Mac a risk?</td><td>Yes, Mac 3 dying takes out Backend A <i>and</i> the backup DNS. But it's a different Mac from the primary DNS, which is what matters for Ext A.</td></tr>
+  <tr><td>Did you edit /etc/pf.conf?</td><td>No. The stock file already loads every <code>com.apple/*</code> anchor; we only load rules into our own anchor.</td></tr>
+</table>
+</div>
+
+<!-- ============================================================ MEMBER 4 -->
+<div class="page">
+<h2><span class="tag t4">Member 4</span> Mac 4: Backend B, standby edge, Ext E, Ext F</h2>
+
+<h3>Concepts you must explain</h3>
+<div class="box m4">
+<ul>
+  <li><b>Backend B</b>: same Node.js app as A, on <b>port 3002</b>, header <code>X-Backend: B</code>.</li>
+  <li><b>Standby edge</b>: a second nginx on Mac 4, made from the <b>same template</b> as Mac 2 (same backends, TLS, timeouts). Only difference: <code>X-Edge: standby</code>.</li>
+  <li>It uses the <b>same certificate and key</b> as Mac 2. A certificate is issued for a <i>name</i>, not an IP, so it is valid on any Mac serving that name.</li>
+  <li><b>DNS cutover</b>: moving users from one server to another by changing the DNS record.</li>
+</ul>
+</div>
+
+<h3>Ext E: Controlled edge migration</h3>
+<ol>
+  <li><b>Test the standby before switching</b>, without touching DNS:<br><code>curl -s --resolve app.teamX.test:443:10.7.3.165 https://app.teamX.test/edge-health</code> → <code>{"edge":"standby"}</code></li>
+  <li>Allow Mac 4 through the firewall: <code>./firewall/firewall.sh allow-standby</code> (Mac 3 and Mac 4).</li>
+  <li>Change the record on <b>both</b> DNS servers: <code>./dns/dns.sh set app $STANDBY_EDGE_IP</code>.</li>
+  <li>Watch: the live view's <code>EDGE</code> column goes <b>primary → standby within 30 s</b> (the TTL). Mac 2's access log stops receiving requests. That means the old edge has <b>drained</b>.</li>
+  <li>Roll back: <code>./dns/dns.sh set app $EDGE_IP</code>.</li>
+</ol>
+<div class="box say"><b>Say:</b> "Clients only know the <i>name</i>, never the IP, so we can move the server with a DNS change alone. During the TTL window <b>both edges must keep running</b>: if we shut the old one first, clients with a cached answer would break for up to 30 s. DNS moves <i>new lookups</i>, not existing connections."</div>
+
+<h3>Ext F: Troubleshooting method</h3>
+<p><b>Always go in the order the packets travel. The first layer that fails is the cause; everything above it is just a side effect.</b></p>
+<table>
+  <tr><th>#</th><th>Layer</th><th>Question</th><th>Command</th><th>Typical faults</th></tr>
+  <tr><td>0</td><td>Client config</td><td>Which DNS server does this Mac use?</td><td><code>scutil --dns | head</code></td><td>DNS changed to a wrong server</td></tr>
+  <tr><td>1</td><td>IP</td><td>Can I reach the machine?</td><td><code>ping 10.7.3.24</code></td><td>Wi-Fi off, Mac asleep, IP changed</td></tr>
+  <tr><td>2</td><td>DNS</td><td>Does the name give the right IP?</td><td><code>dig app.teamX.test</code></td><td>dnsmasq stopped, wrong record, stale cache</td></tr>
+  <tr><td>3</td><td>TCP</td><td>Is the port open?</td><td><code>nc -vz 10.7.3.24 443</code></td><td>nginx stopped (refused), firewall (timeout)</td></tr>
+  <tr><td>4</td><td>TLS</td><td>Is the certificate trusted and valid for the name?</td><td><code>openssl s_client -connect 10.7.3.24:443</code></td><td>Cert not trusted, wrong name, expired</td></tr>
+  <tr><td>5</td><td>HTTP / app</td><td>What status code? Which backend?</td><td><code>curl -si https://app.teamX.test/api/status</code></td><td>502 backends down, only one backend answers</td></tr>
+</table>
+<p><code>./scripts/diagnose.sh</code> runs all of these in order and prints a <b>Verdict</b>. Read the verdict out loud, then fix that layer (see Part 4 fix table).</p>
+<div class="box say"><b>Say:</b> "We don't guess. We check DNS, then IP, then the port, then TLS, then HTTP. The first one that fails is the cause. For example, if ping works but DNS doesn't, it's not the network. It's name resolution."</div>
+
+<h3>Your commands (Mac 4, folder <code>~/Desktop/CN_Project</code>)</h3>
+<table>
+  <tr><th>Command</th><th>What it does</th></tr>
+  <tr><td><code>cd backend-b &amp;&amp; node server.js</code></td><td>Start Backend B (keep window open; click <b>Allow</b>)</td></tr>
+  <tr><td><code>sudo nginx -t &amp;&amp; sudo nginx</code></td><td>Start the standby nginx</td></tr>
+  <tr><td><code>sudo nginx -s quit</code></td><td>Stop the standby after the demo (graceful)</td></tr>
+  <tr><td><code>./firewall/firewall.sh apply</code> / <code>allow-standby</code> / <code>rollback</code></td><td>Firewall on Mac 4 (same as Mac 3)</td></tr>
+  <tr><td><code>curl -s --resolve app.teamX.test:443:10.7.3.165 https://app.teamX.test/edge-health</code></td><td>Test standby edge without changing DNS</td></tr>
+  <tr><td><code>./scripts/diagnose.sh</code> (run on Mac 1 in the demo)</td><td>Layer-by-layer diagnosis</td></tr>
+</table>
+
+<h3>Likely questions for you</h3>
+<table class="qa">
+  <tr><td>Why not just switch the IP instantly?</td><td>Clients cached the old answer for up to the TTL. You can't flush other people's caches; you wait for the TTL.</td></tr>
+  <tr><td>How do real companies avoid this delay?</td><td>Lower the TTL before migrating, or use a floating IP / anycast / managed load balancer so the IP never changes.</td></tr>
+  <tr><td>Why copy the private key, and is that safe?</td><td>The standby needs it to prove it is app.teamX.test. Copy it only over a trusted channel (AirDrop), never into git; it's a secret.</td></tr>
+  <tr><td>What does --resolve do?</td><td>Pins the name to an IP for one curl request. TLS still checks the name, so it's a real test without changing DNS.</td></tr>
+  <tr><td>Ping works, website doesn't. Where do you look?</td><td>IP layer is fine, so check DNS (dig), then the port (nc), then TLS, then HTTP status.</td></tr>
+</table>
+</div>
+
+<!-- ============================================================ PART 3 -->
+<div class="page">
+<h2>Part 3: Common questions (everyone must know)</h2>
+<table class="qa">
+  <tr><th>Question</th><th>Answer</th></tr>
+  <tr><td>Explain the whole flow.</td><td>Name → DNS (Mac 1) → IP 10.7.3.24 → TCP handshake on 443 → TLS handshake (certificate) → encrypted HTTP → nginx picks A or B → plain HTTP to the backend → response back the same way.</td></tr>
+  <tr><td>What is a private network?</td><td>Addresses like 10.x.x.x are private (RFC 1918). They work only inside the local network, not on the internet.</td></tr>
+  <tr><td>TCP vs UDP?</td><td>TCP: connection, handshake, reliable, ordered (HTTP/HTTPS). UDP: no connection, fast, no guarantee (DNS).</td></tr>
+  <tr><td>TCP 3-way handshake?</td><td>SYN → SYN-ACK → ACK. Then data can flow.</td></tr>
+  <tr><td>What does TLS give you?</td><td>Encryption (privacy), integrity (no tampering), authentication (the certificate proves the server's identity).</td></tr>
+  <tr><td>HTTP vs HTTPS?</td><td>HTTPS = HTTP inside TLS, port 443. HTTP is plain text, port 80.</td></tr>
+  <tr><td>What is load balancing?</td><td>Spreading requests across several servers for capacity and resilience. Ours: round robin with retry.</td></tr>
+  <tr><td>What is high availability?</td><td>The service keeps working when a component fails, by having redundant copies (2 DNS, 2 backends, 2 edges) and automatic or quick failover.</td></tr>
+  <tr><td>What is a single point of failure?</td><td>A component whose failure stops the whole service. Ours: the primary nginx edge on Mac 2 (and the Wi-Fi itself).</td></tr>
+  <tr><td>502 vs 504?</td><td>502: backend refused the connection (app not running). 504: no answer in time (host off / firewall drop).</td></tr>
+  <tr><td>Refused vs timed out?</td><td>Refused: host up, port closed (RST). Timed out: packets dropped or host down.</td></tr>
+  <tr><td>OSI layers in this project?</td><td>L7: DNS, HTTP · L6: TLS · L4: TCP/UDP ports · L3: IP / ping · L2/L1: Wi-Fi.</td></tr>
+  <tr><td>What is a reverse proxy vs forward proxy?</td><td>Reverse proxy sits in front of <i>servers</i> (nginx here). Forward proxy sits in front of <i>clients</i> (e.g. a company web proxy).</td></tr>
+  <tr><td>What is TTL?</td><td>Seconds a DNS answer may be cached. Ours 30 s.</td></tr>
+  <tr><td>Why a self-signed certificate?</td><td>.test is private; no public CA will sign it. We trusted our certificate on every client Mac instead of ignoring errors with -k.</td></tr>
+  <tr><td>Cloud equivalents?</td><td>dnsmasq → Route 53 · nginx edge → ALB / load balancer · pf rules → security groups · standby edge + DNS change → DNS failover.</td></tr>
+  <tr><td>Biggest problem you faced?</td><td>The macOS application firewall on our managed Macs silently blocked nginx/node/dnsmasq after restarts (timeouts while ping worked). We diagnosed it layer by layer: ping OK, TCP timed out, so a firewall, and fixed it by allowing the apps.</td></tr>
+  <tr><td>What would you improve?</td><td>Floating IP (keepalived) for the edge, active health checks, HTTPS to the backends, monitoring/alerts, automated DNS failover.</td></tr>
+</table>
+
+<h3>Glossary (one line each)</h3>
+<table>
+  <tr><td><b>dnsmasq</b></td><td>Small DNS server we run on Mac 1 and Mac 3</td><td><b>nginx</b></td><td>Web server / reverse proxy / load balancer</td></tr>
+  <tr><td><b>upstream</b></td><td>nginx's list of backend servers</td><td><b>pf / pfctl</b></td><td>macOS firewall / its control command</td></tr>
+  <tr><td><b>dig</b></td><td>Ask a DNS server a question</td><td><b>nc -z</b></td><td>Test if a TCP port is open</td></tr>
+  <tr><td><b>curl</b></td><td>Make an HTTP(S) request from the terminal</td><td><b>openssl s_client</b></td><td>Inspect a TLS connection/certificate</td></tr>
+  <tr><td><b>SAN</b></td><td>Names a certificate is valid for</td><td><b>Round robin</b></td><td>Take turns: A, B, A, B</td></tr>
+  <tr><td><b>Failover</b></td><td>Switching to a backup when something fails</td><td><b>Flush</b></td><td>Clear the DNS cache</td></tr>
+</table>
+</div>
+
+<!-- ============================================================ PART 4 -->
+<div class="page">
+<h2>Part 4: Demo script (Mac 1 = main client)</h2>
+<p class="small">Folders: Mac 1 <code>~/Desktop/CN/CN_Project</code>; Macs 2–4 <code>~/Desktop/CN_Project</code>. In every new window first run <code>cd &lt;folder&gt; &amp;&amp; source scripts/demo-env.sh</code>. W1 = window 1, W2 = window 2.</p>
+
+<h3>Before you start</h3>
+<ul>
+  <li>All Macs: lid open, charger in, and in its own window: <code>caffeinate -dimsu</code></li>
+  <li>Mac 2 W1: <code>tail -f /opt/homebrew/var/log/nginx/cn-edge-access.log</code> · Mac 3 W1: Backend A running · Mac 4 W1: Backend B running</li>
+  <li>Mac 1 W2: <code>./scripts/diagnose.sh</code> → must end with <b>all layers healthy</b></li>
+</ul>
+
+<table>
+  <tr><th>#</th><th>Who</th><th>Command / action</th><th>Expected</th></tr>
+  <tr><td colspan="4"><b>Ext A: Backup DNS</b> (Member 1 talks)</td></tr>
+  <tr><td>1</td><td>Mac 1 W2</td><td><code>dig @$MAC1_IP app.teamX.test +noall +answer</code><br><code>dig @$BACKUP_DNS_IP app.teamX.test +noall +answer</code></td><td>Same IP 10.7.3.24 twice</td></tr>
+  <tr><td>2</td><td>Mac 1 W1</td><td><code>./scripts/watch.sh</code> (leave running until 22)</td><td>Live lines, status 200</td></tr>
+  <tr><td>3</td><td>Mac 1 W2</td><td><code>./dns/dns.sh stop</code></td><td>dns1 = down, still 200</td></tr>
+  <tr><td>4</td><td>Mac 1 W2</td><td><code>./dns/dns.sh start</code></td><td></td></tr>
+  <tr><td colspan="4"><b>Ext B: TTL</b> (Member 1 talks)</td></tr>
+  <tr><td>5</td><td>Mac 1 W2</td><td><code>dig app.teamX.test +noall +answer</code></td><td>TTL 30</td></tr>
+  <tr><td>6</td><td>Mac 1, then Mac 3</td><td><code>./dns/dns.sh set app $STANDBY_EDGE_IP</code></td><td>DNS columns change now; CONNECTED after ≤30 s</td></tr>
+  <tr><td>7</td><td>Mac 1, then Mac 3</td><td><code>./dns/dns.sh set app $EDGE_IP</code></td><td></td></tr>
+  <tr><td>8</td><td>Mac 1 W2</td><td><code>./scripts/client-dns.sh flush</code></td><td>Switches back immediately</td></tr>
+  <tr><td colspan="4"><b>Ext D: Failover</b> (Member 2 talks)</td></tr>
+  <tr><td>9</td><td>Mac 1 W2</td><td><code>./scripts/lb-test.sh 6</code></td><td>A B A B A B</td></tr>
+  <tr><td>10</td><td>Mac 3 W1</td><td><kbd>Ctrl+C</kbd> (Backend A off)</td><td></td></tr>
+  <tr><td>11</td><td>Mac 1 W2</td><td><code>./scripts/lb-test.sh 8</code></td><td>All B, 0 failed</td></tr>
+  <tr><td>12</td><td>Mac 3 W1</td><td><code>node server.js</code> (click Allow)</td><td></td></tr>
+  <tr><td>13</td><td>Mac 1 W2</td><td><code>sleep 6; ./scripts/lb-test.sh 6</code></td><td>A and B again</td></tr>
+  <tr><td>14</td><td>Mac 3 + Mac 4 W1</td><td><kbd>Ctrl+C</kbd> both backends</td><td></td></tr>
+  <tr><td>15</td><td>Mac 1 W2</td><td><code>curl -si https://app.teamX.test | head -1</code><br><code>curl -s https://app.teamX.test/edge-health</code></td><td>502, edge still ok</td></tr>
+  <tr><td>16</td><td>Mac 3 + Mac 4 W1</td><td><code>node server.js</code></td><td></td></tr>
+  <tr><td colspan="4"><b>Ext C: Firewall</b> (Member 3 talks)</td></tr>
+  <tr><td>17</td><td>Mac 1 W2</td><td><code>./scripts/backend-ports.sh</code></td><td>Both OPEN (the problem)</td></tr>
+  <tr><td>18</td><td>Mac 3 + Mac 4 W2</td><td><code>./firewall/firewall.sh apply</code></td><td>Rules loaded</td></tr>
+  <tr><td>19</td><td>Mac 1 W2<br>Mac 2 W2</td><td><code>./scripts/backend-ports.sh</code> and <code>./scripts/lb-test.sh 4</code><br><code>./scripts/backend-ports.sh</code></td><td>Mac 1: BLOCKED, site works<br>Mac 2: OPEN</td></tr>
+  <tr><td colspan="4"><b>Ext E: Edge cutover</b> (Member 4 talks)</td></tr>
+  <tr><td>20</td><td>Mac 3 + Mac 4 W2</td><td><code>./firewall/firewall.sh allow-standby</code></td><td></td></tr>
+  <tr><td>21</td><td>Mac 1, then Mac 3</td><td><code>./dns/dns.sh set app $STANDBY_EDGE_IP</code></td><td>EDGE primary → standby within 30 s; Mac 2 log goes quiet</td></tr>
+  <tr><td>22</td><td>Mac 1, then Mac 3</td><td><code>./dns/dns.sh set app $EDGE_IP</code>, then <kbd>Ctrl+C</kbd> watch.sh</td><td></td></tr>
+  <tr><td colspan="4"><b>Ext F: Faculty fault</b> (Member 4 talks, Member 1 types)</td></tr>
+  <tr><td>23</td><td>Mac 1 W2</td><td><code>./scripts/diagnose.sh</code> → read the Verdict, fix that layer, run again</td><td>all layers healthy</td></tr>
+  <tr><td colspan="4"><b>After</b>: Mac 3 + Mac 4 <code>./firewall/firewall.sh rollback</code> · Mac 4 <code>sudo nginx -s quit</code></td></tr>
+</table>
+
+<h3>Emergency fixes (memorise)</h3>
+<table>
+  <tr><th>Symptom / verdict</th><th>Most likely cause</th><th>Fix (on which Mac)</th></tr>
+  <tr><td>Ping works, port <b>times out</b></td><td>macOS firewall popup not answered</td><td>Look at that Mac's screen → <b>Allow</b>; or restart the program and click Allow</td></tr>
+  <tr><td>DNS: no answer</td><td>dnsmasq stopped</td><td><code>./dns/dns.sh start</code> (Mac 1 / Mac 3)</td></tr>
+  <tr><td>DNS data: wrong IP</td><td>Record changed</td><td><code>./dns/dns.sh set app $EDGE_IP</code> (Mac 1 + Mac 3), then <code>./scripts/client-dns.sh flush</code> (Mac 1)</td></tr>
+  <tr><td>DNS client</td><td>Client uses wrong DNS</td><td><code>./scripts/client-dns.sh set</code></td></tr>
+  <tr><td>TCP 443 refused</td><td>nginx stopped</td><td><code>sudo nginx</code> (Mac 2) → Allow</td></tr>
+  <tr><td>nginx: address already in use</td><td>Old nginx still running</td><td><code>sudo pkill -9 nginx; sleep 1; sudo nginx</code></td></tr>
+  <tr><td>TLS: not trusted</td><td>Certificate removed from keychain</td><td><code>sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain ~/Downloads/teamX.crt</code></td></tr>
+  <tr><td>APP 502</td><td>Backend(s) stopped</td><td><code>node server.js</code> (Mac 3 / Mac 4)</td></tr>
+  <tr><td>APP 504</td><td>Backend Mac asleep / firewall blocks edge</td><td>Wake Mac; <code>./firewall/firewall.sh rollback</code></td></tr>
+  <tr><td>LB: only one backend answers</td><td>One backend down, or wrong IP:port in nginx</td><td>Restart it; on Mac 2 <code>./scripts/diagnose.sh --edge</code></td></tr>
+  <tr><td>Prompt says "not in team.env"</td><td>Mac got a new IP (DHCP)</td><td>Update team.env on all Macs, <code>./scripts/render.sh</code>, reinstall configs</td></tr>
+</table>
+</div>
+
+</body>
+</html>

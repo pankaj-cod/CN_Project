@@ -78,11 +78,27 @@ CN_Project/
 │   ├── package.json
 │   └── package-lock.json
 ├── nginx/                # Mac 2 – reverse proxy config
-│   ├── nginx.conf
+│   ├── nginx.conf                    # Phase 1
+│   ├── nginx-phase2.conf.template    # Phase 2 (primary + standby edge)
 │   └── README.md
-├── dns/                  # Mac 1 – dnsmasq config
-│   └── dnsmasq-project2.conf
-├── screenshots/          # Test evidence
+├── dns/                  # Mac 1 (+ backup DNS in Phase 2)
+│   ├── dnsmasq-project2.conf         # Phase 1
+│   ├── dnsmasq.conf.template         # Phase 2 (primary + backup, TTL 30)
+│   └── dns.sh                        # install / set record / stop / start
+├── firewall/             # Phase 2 – backend isolation (Mac 3, Mac 4)
+│   ├── pf-backend.rules.template
+│   └── firewall.sh                   # apply / status / allow-standby / rollback
+├── scripts/              # Phase 2 – render configs, demos, diagnosis
+│   ├── render.sh  client-dns.sh  watch.sh  lb-test.sh
+│   └── backend-ports.sh  diagnose.sh  lib.sh
+├── docs/
+│   ├── PHASE2.md                     # Phase 2 runbook (Extensions A–F)
+│   ├── TROUBLESHOOTING.md            # Extension F method + fault catalog
+│   ├── ARCHITECTURE.md               # updated topology / IP table / flow
+│   └── PHASE2_REPORT.md              # Phase 2 final report
+├── evidence/phase2/      # Phase 2 evidence checklist + outputs
+├── screenshots/          # Phase 1 test evidence
+├── team.env.example      # copy to team.env (git-ignored) with real IPs
 ├── README.md
 └── .gitignore
 ```
@@ -431,6 +447,36 @@ X-Backend: B
 | `502 Bad Gateway` | Backends running? `curl http://BACKEND_A_IP:3001` from Mac 2 works? macOS firewall allows `node`? |
 | `nginx: bind() to 0.0.0.0:80 failed` | Start Nginx with `sudo` |
 | `SSL certificate problem` in curl | The `.crt` is not trusted on that Mac; run the `security add-trusted-cert` step. Do not use `-k` |
+
+---
+
+## Phase 2: Harden, Recover, Troubleshoot
+
+Phase 2 extends the same four Macs; nothing is rebuilt. Full runbook:
+**[docs/PHASE2.md](docs/PHASE2.md)**.
+
+| Ext | What | Where | Key command |
+|-----|------|-------|-------------|
+| A | Backup DNS resolver | Mac 3 | `./dns/dns.sh install backup`, clients: `./scripts/client-dns.sh set` |
+| B | TTL 30 s + controlled record change | both DNS Macs | `./dns/dns.sh set app <ip>`, `./scripts/watch.sh` |
+| C | Only the edge may reach :3001/:3002 | Mac 3, Mac 4 | `./firewall/firewall.sh apply` / `rollback` |
+| D | Backend failover + recovery | Mac 2 | `./scripts/lb-test.sh` while stopping Backend A |
+| E | DNS cutover to a standby edge | Mac 4 | standby nginx + `./dns/dns.sh set app <standby-ip>` |
+| F | Faculty-injected fault | any | `./scripts/diagnose.sh`, [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) |
+
+Quick start on every Mac:
+
+```bash
+cp team.env.example team.env    # fill in the real LAN IPs (git-ignored)
+./scripts/render.sh             # writes ready configs to build/
+source scripts/demo-env.sh      # each terminal: team.env vars, labelled prompt, snap NAME
+```
+
+Evaluation-day commands per Mac: [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md).
+
+Deliverables: [architecture](docs/ARCHITECTURE.md) ·
+[final report](docs/PHASE2_REPORT.md) ·
+[evidence checklist](evidence/phase2/README.md).
 
 ## Security Notes
 
